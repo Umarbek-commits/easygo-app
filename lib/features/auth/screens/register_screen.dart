@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import 'dart:math';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/storage/user_storage.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -317,22 +318,32 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       return;
                                     }
 
+                                    final phone = '+996${_phoneController.text.trim()}';
+
                                     try {
                                       await SupabaseService.registerUser(
                                         firstName: _firstNameController.text.trim(),
                                         lastName: _lastNameController.text.trim(),
-                                        phone: '+996${_phoneController.text.trim()}',
+                                        phone: phone,
                                       );
+
+                                      await UserStorage.savePhone(phone);
 
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(
-                                          content: Text('Пользователь сохранён'),
+                                          content: Text('Регистрация успешно завершена'),
+                                          backgroundColor: Colors.green,
                                         ),
                                       );
+
+                                      // Возврат на экран входа после успешной регистрации
+                                      Navigator.pop(context);
                                     } catch (e) {
                                       setState(() {
                                         if (e.toString().contains('users_phone_key')) {
                                           _phoneError = 'Этот номер уже зарегистрирован';
+                                        } else {
+                                          _codeError = 'Ошибка регистрации. Попробуйте позже.';
                                         }
                                       });
                                     }

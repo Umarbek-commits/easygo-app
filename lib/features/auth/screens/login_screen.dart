@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import 'dart:math';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/storage/user_storage.dart';
 import '../../passenger/home/screens/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -298,7 +299,7 @@ class _LoginScreenState extends State<LoginScreen>
                               width: double.infinity,
                               height: 52,
                               child: ElevatedButton(
-                                onPressed: () {
+                                onPressed: () async {
                                   setState(() {
                                     _codeError = null;
                                   });
@@ -309,6 +310,10 @@ class _LoginScreenState extends State<LoginScreen>
                                     });
                                     return;
                                   }
+
+                                  final phone = '+996${_phoneController.text.trim()}';
+
+                                  await UserStorage.savePhone(phone);
 
                                   Navigator.pushReplacement(
                                     context,

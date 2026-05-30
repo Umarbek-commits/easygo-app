@@ -24,4 +24,16 @@ class SupabaseService {
 
     return response.isNotEmpty;
   }
+
+  static Future<Map<String, dynamic>?> getUserByPhone(
+    String phone,
+  ) async {
+    final response = await client
+        .from('users')
+        .select()
+        .eq('phone', phone)
+        .maybeSingle();
+
+    return response;
+  }
 }
