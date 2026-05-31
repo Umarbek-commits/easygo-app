@@ -6,6 +6,7 @@ import '../../../../core/services/supabase_service.dart';
 import '../../../../core/storage/user_storage.dart';
 import '../../../../shared/widgets/mobile_shell.dart';
 import '../../home/screens/home_screen.dart';
+import '../../support/screens/support_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -53,6 +54,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return MobileShell(
       currentIndex: 2,
       onTap: (index) {
+        if (index == 0) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const SupportScreen(),
+            ),
+          );
+        }
+
         if (index == 1) {
           Navigator.pushReplacement(
             context,
@@ -171,8 +181,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               children: [
                                 // Декоративные SVG элементы
                                 Positioned(
-                                  top: -30,
-                                  left: 120,
+                                  top: -80,
+                                  left: 60,
                                   child: Opacity(
                                     opacity: 0.12,
                                     child: SvgPicture.asset(
@@ -188,12 +198,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 Positioned(
                                   bottom: -40,
-                                  left: -20,
+                                  left: -40,
                                   child: Opacity(
                                     opacity: 0.12,
                                     child: SvgPicture.asset(
                                       "assets/svgs/solarwalletmoneybold.svg",
-                                      width: 140,
+                                      width: 80,
                                       height: 140,
                                       colorFilter: const ColorFilter.mode(
                                         Colors.white,

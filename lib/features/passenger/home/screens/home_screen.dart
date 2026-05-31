@@ -5,7 +5,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../shared/widgets/mobile_shell.dart';
-import '../../profile/screens/profile_screen.dart'; // ДОБАВЛЕН ЭТОТ ИМПОРТ
+import '../../profile/screens/profile_screen.dart';
+import '../../support/screens/support_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -15,7 +16,15 @@ class HomeScreen extends StatelessWidget {
     return MobileShell(
       currentIndex: 1,
       onTap: (index) {
-        // ИСПРАВЛЕННЫЙ БЛОК onTap
+        if (index == 0) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const SupportScreen(),
+            ),
+          );
+        }
+
         if (index == 2) {
           Navigator.pushReplacement(
             context,
@@ -44,7 +53,7 @@ class HomeScreen extends StatelessWidget {
 
           // LOGO
           Positioned(
-            top: 45,
+            top: 60,
             left: 11,
             child: RichText(
               text: TextSpan(
@@ -53,7 +62,7 @@ class HomeScreen extends StatelessWidget {
                     text: 'Easy',
                     style: GoogleFonts.poppins(
                       color: Colors.black,
-                      fontSize: 58,
+                      fontSize: 62,
                       fontWeight: FontWeight.w700,
                       height: 1,
                     ),

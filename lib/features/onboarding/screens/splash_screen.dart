@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import '../../auth/screens/register_screen.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../../core/storage/user_storage.dart';
+import '../../passenger/home/screens/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,9 +18,27 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _animation;
 
+  Future<void> _checkLogin() async {
+    final phone = await UserStorage.getPhone();
+
+    if (!mounted) return;
+
+    if (phone != null && phone.isNotEmpty) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const HomeScreen(),
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLogin();
+    });
 
     _controller = AnimationController(
       vsync: this,
