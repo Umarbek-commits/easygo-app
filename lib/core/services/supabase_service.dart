@@ -36,4 +36,27 @@ class SupabaseService {
 
     return response;
   }
+
+  static Future<void> sendSupportMessage({
+    required String phone,
+    required String message,
+  }) async {
+    await client.from('support_messages').insert({
+      'phone': phone,
+      'message': message,
+      'is_support': false,
+    });
+  }
+
+  static Future<List<Map<String, dynamic>>> getReplies(
+    String userId,
+  ) async {
+    final response = await client
+        .from('support_replies')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at');
+
+    return List<Map<String, dynamic>>.from(response);
+  }
 }

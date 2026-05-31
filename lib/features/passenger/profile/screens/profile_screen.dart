@@ -7,6 +7,7 @@ import '../../../../core/storage/user_storage.dart';
 import '../../../../shared/widgets/mobile_shell.dart';
 import '../../home/screens/home_screen.dart';
 import '../../support/screens/support_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -303,12 +304,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 20),
                           // Меню
-                          _menuItem(Icons.discount, 'Ввести промокод'),
-                          _menuItem(Icons.history, 'История поездок'),
-                          _menuItem(Icons.notifications, 'Уведомления'),
-                          _menuItem(Icons.location_on, 'Мои адреса'),
-                          _menuItem(Icons.settings, 'Настройки'),
-                          _menuItem(Icons.info, 'Информация'),
+                          _menuItem(Icons.discount, 'Ввести промокод', () {}),
+                          _menuItem(Icons.history, 'История поездок', () {}),
+                          _menuItem(Icons.notifications, 'Уведомления', () {}),
+                          _menuItem(Icons.location_on, 'Мои адреса', () {}),
+                          _menuItem(Icons.settings, 'Настройки', () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SettingsScreen(),
+                              ),
+                            );
+                          }),
+                          _menuItem(Icons.info, 'Информация', () {}),
                         ],
                       ),
                     ),
@@ -322,39 +330,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _menuItem(
     IconData icon,
     String title,
+    VoidCallback onTap,
   ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 18,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2B2733),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: Colors.white,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2B2733),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          const Icon(
-            Icons.chevron_right,
-            color: Colors.white,
-          ),
-        ],
+            const Icon(
+              Icons.chevron_right,
+              color: Colors.white,
+            ),
+          ],
+        ),
       ),
     );
   }

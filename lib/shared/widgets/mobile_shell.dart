@@ -25,7 +25,7 @@ class _MobileShellState extends State<MobileShell> {
       body: Stack(
         children: [
           widget.child,
-
+        if (MediaQuery.of(context).viewInsets.bottom == 0)
           Positioned(
             left: 20,
             right: 20,

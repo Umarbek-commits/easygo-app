@@ -3,9 +3,129 @@ import 'package:flutter/material.dart';
 import '../../../../shared/widgets/mobile_shell.dart';
 import '../../home/screens/home_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../../../core/services/supabase_service.dart';
+import '../../../../core/storage/user_storage.dart';
+import '../../../../shared/services/telegram_service.dart';
 
-class SupportScreen extends StatelessWidget {
+class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
+
+  @override
+  State<SupportScreen> createState() => _SupportScreenState();
+}
+
+class _SupportScreenState extends State<SupportScreen> {
+  final TextEditingController messageController = TextEditingController();
+  
+  final List<Map<String, dynamic>> messages = [
+    {
+      "isSupport": true,
+      "text": "Здравствуйте, чем могу помочь?",
+    },
+  ];
+
+  Future<void> loadReplies() async {
+    final phone = await UserStorage.getPhone();
+
+    if (phone == null) return;
+
+    final user = await SupabaseService.getUserByPhone(phone);
+
+    if (user == null) return;
+
+    final replies = await SupabaseService.getReplies(user['id']);
+
+    setState(() {
+      for (final reply in replies) {
+        final exists = messages.any(
+          (m) => m["text"] == reply["message"],
+        );
+
+        if (!exists) {
+          messages.add({
+            "isSupport": true,
+            "text": reply["message"],
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    loadReplies();
+
+    Future.doWhile(() async {
+      await Future.delayed(
+        const Duration(seconds: 3),
+      );
+
+      if (!mounted) return false;
+
+      await loadReplies();
+
+      return true;
+    });
+  }
+
+  @override
+  void dispose() {
+    messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendMessage() async {
+    if (messageController.text.trim().isEmpty) return;
+
+    final text = messageController.text.trim();
+
+    setState(() {
+      messages.add({
+        "isSupport": false,
+        "text": text,
+      });
+    });
+
+    messageController.clear();
+
+    final phone = await UserStorage.getPhone();
+
+    if (phone != null) {
+      await SupabaseService.sendSupportMessage(
+        phone: phone,
+        message: text,
+      );
+
+      final user = await SupabaseService.getUserByPhone(phone);
+
+      await TelegramService.sendMessage(
+        '📩 Новый запрос EasyGO\n\n'
+        'User ID: ${user?['id']}\n'
+        'Телефон: $phone\n'
+        'Имя: ${user?['first_name']} ${user?['last_name']}\n\n'
+        'Сообщение:\n'
+        '$text\n\n'
+        'Ответь командой:\n'
+        '/reply ${user?['id']} ваш ответ',
+      );
+    }
+
+    Future.delayed(
+      const Duration(seconds: 1),
+      () {
+        if (!mounted) return;
+
+        setState(() {
+          messages.add({
+            "isSupport": true,
+            "text": "Ваше сообщение получено. Оператор ответит в ближайшее время.",
+          });
+        });
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +146,7 @@ class SupportScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor: const Color(0xFFF3F3F3),
         body: SafeArea(
           child: Stack(
@@ -63,94 +184,136 @@ class SupportScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 20),
 
-                  // Сообщение от поддержки
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Аватар с иконкой headset
-                        Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2D2B36),
-                            borderRadius: BorderRadius.circular(23),
-                          ),
-                          child: const Icon(
-                            Icons.headset_mic_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
+                  // Список сообщений (расширяемая область)
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = messages[index];
 
-                        const SizedBox(width: 6),
-
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "EasyGO! Поддержка",
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2D2B36),
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: const Text(
-                                "Здравствуйте,чем могу\nпомочь?",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  height: 1.4,
+                        if (msg["isSupport"] == true) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2D2B36),
+                                    borderRadius: BorderRadius.circular(23),
+                                  ),
+                                  child: const Icon(
+                                    Icons.headset_mic_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
                                 ),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "EasyGO! Поддержка",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF2D2B36),
+                                          borderRadius: BorderRadius.circular(18),
+                                        ),
+                                        child: Text(
+                                          msg["text"],
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return Align(
+                          alignment: Alignment.centerRight,
+                          child: Container(
+                            margin: const EdgeInsets.only(
+                              top: 6,
+                              bottom: 6,
+                              left: 60,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFAE00FF),
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Text(
+                              msg["text"],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        );
+                      },
                     ),
                   ),
 
-                  // Растягиваем пространство
-                  const SizedBox(height: 395),
-
-                  // Чипы быстрых ответов
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                   padding: const EdgeInsets.fromLTRB(
-  20,
-  4,
-  20,
-  4,
-),
-                    
-                    child: Row(
-                      children: [
-                        _chip("Проблема с водителем"),
-                        _chip("Как работает рейтинг?"),
-                        _chip("Как вернуть вещь?"),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Поле ввода
+                  // Чипы быстрых ответов с отступом снизу
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 95),
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                      child: Row(
+                        children: [
+                          _chip("Проблема с водителем", () {
+                            messageController.text = "Проблема с водителем";
+                          }),
+                          _chip("Как работает рейтинг?", () {
+                            messageController.text = "Как работает рейтинг?";
+                          }),
+                          _chip("Как вернуть вещь?", () {
+                            messageController.text = "Как вернуть вещь?";
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Поле ввода с анимированным отступом
+                  AnimatedPadding(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      MediaQuery.of(context).viewInsets.bottom > 0
+                          ? 15
+                          : 105,
+                    ),
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
@@ -160,28 +323,40 @@ class SupportScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           const SizedBox(width: 20),
-                          const Expanded(
-                            child: Text(
-                              "Сообщение",
-                              style: TextStyle(
-                                color: Colors.black38,
-                                fontSize: 16,
+                          Expanded(
+                            child: TextField(
+                              controller: messageController,
+                              style: const TextStyle(
+                                color: Colors.black,
                               ),
+                              decoration: const InputDecoration(
+                                filled: false,
+                                hintText: "Сообщение",
+                                hintStyle: TextStyle(
+                                  color: Color(0xFF9E9E9E),
+                                ),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                              ),
+                              onSubmitted: (_) => _sendMessage(),
                             ),
                           ),
-                          // Кнопка отправки
-                          Container(
-                            width: 44,
-                            height: 44,
-                            margin: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.send_rounded,
-                              size: 20,
-                              color: Colors.black87,
+                          GestureDetector(
+                            onTap: _sendMessage,
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              margin: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.send_rounded,
+                                size: 20,
+                                color: Colors.black87,
+                              ),
                             ),
                           ),
                         ],
@@ -197,22 +372,25 @@ class SupportScreen extends StatelessWidget {
     );
   }
 
-  static Widget _chip(String text) {
-    return Container(
-      margin: const EdgeInsets.only(right:16),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 9,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2D2B36),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
+  Widget _chip(String text, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 9,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2D2B36),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+          ),
         ),
       ),
     );
