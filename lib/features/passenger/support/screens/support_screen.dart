@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/widgets/mobile_shell.dart';
 import '../../home/screens/home_screen.dart';
@@ -16,56 +18,99 @@ class SupportScreen extends StatefulWidget {
 
 class _SupportScreenState extends State<SupportScreen> {
   final TextEditingController messageController = TextEditingController();
-  
-  final List<Map<String, dynamic>> messages = [
-    {
-      "isSupport": true,
-      "text": "Здравствуйте, чем могу помочь?",
-    },
-  ];
+  bool firstMessageSent = false;
 
-  Future<void> loadReplies() async {
+  final List<Map<String, dynamic>> messages = [];
+
+  // Ключ для SharedPreferences — хранит timestamp последней очистки
+  static const String _clearKey = 'support_chat_cleared_at';
+
+  Future<void> clearChat() async {
+    // Сохраняем время очистки — всё что было ДО этого момента скрываем
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_clearKey, DateTime.now().toIso8601String());
+
+    setState(() {
+      messages.clear();
+      messages.add({
+        "isSupport": true,
+        "text": "Здравствуйте, чем могу помочь?",
+        "time": "",
+      });
+    });
+  }
+
+  Future<void> loadChatHistory() async {
     final phone = await UserStorage.getPhone();
-
     if (phone == null) return;
 
     final user = await SupabaseService.getUserByPhone(phone);
-
     if (user == null) return;
 
+    // Читаем время последней очистки
+    final prefs = await SharedPreferences.getInstance();
+    final clearedAtStr = prefs.getString(_clearKey);
+    final clearedAt = clearedAtStr != null ? DateTime.parse(clearedAtStr) : null;
+
+    final userMessages = await SupabaseService.getSupportMessages(phone);
     final replies = await SupabaseService.getReplies(user['id']);
 
-    setState(() {
-      for (final reply in replies) {
-        final exists = messages.any(
-          (m) => m["text"] == reply["message"],
-        );
+    List<Map<String, dynamic>> allMessages = [];
 
-        if (!exists) {
-          messages.add({
-            "isSupport": true,
-            "text": reply["message"],
-          });
-        }
-      }
+    for (final msg in userMessages) {
+      final createdAt = DateTime.parse(msg["created_at"]);
+      // Пропускаем сообщения до момента очистки
+      if (clearedAt != null && createdAt.isBefore(clearedAt)) continue;
+
+      allMessages.add({
+        "isSupport": false,
+        "text": msg["message"],
+        "time": DateFormat('HH:mm').format(createdAt),
+        "created_at": msg["created_at"],
+      });
+    }
+
+    for (final reply in replies) {
+      final createdAt = DateTime.parse(reply["created_at"]);
+      // Пропускаем ответы до момента очистки
+      if (clearedAt != null && createdAt.isBefore(clearedAt)) continue;
+
+      allMessages.add({
+        "isSupport": true,
+        "text": reply["message"],
+        "time": DateFormat('HH:mm').format(createdAt),
+        "created_at": reply["created_at"],
+      });
+    }
+
+    allMessages.sort(
+      (a, b) => DateTime.parse(a["created_at"]).compareTo(
+        DateTime.parse(b["created_at"]),
+      ),
+    );
+
+    allMessages.insert(0, {
+      "isSupport": true,
+      "text": "Здравствуйте, чем могу помочь?",
+      "time": "",
+      "created_at": "",
+    });
+
+    setState(() {
+      messages.clear();
+      messages.addAll(allMessages);
     });
   }
 
   @override
   void initState() {
     super.initState();
-
-    loadReplies();
+    loadChatHistory();
 
     Future.doWhile(() async {
-      await Future.delayed(
-        const Duration(seconds: 3),
-      );
-
+      await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return false;
-
-      await loadReplies();
-
+      await loadChatHistory();
       return true;
     });
   }
@@ -85,6 +130,7 @@ class _SupportScreenState extends State<SupportScreen> {
       messages.add({
         "isSupport": false,
         "text": text,
+        "time": DateFormat('HH:mm').format(DateTime.now()),
       });
     });
 
@@ -102,29 +148,35 @@ class _SupportScreenState extends State<SupportScreen> {
 
       await TelegramService.sendMessage(
         '📩 Новый запрос EasyGO\n\n'
-        'User ID: ${user?['id']}\n'
+        'ID: ${user?['support_id']}\n'
         'Телефон: $phone\n'
         'Имя: ${user?['first_name']} ${user?['last_name']}\n\n'
         'Сообщение:\n'
         '$text\n\n'
         'Ответь командой:\n'
-        '/reply ${user?['id']} ваш ответ',
+        '/reply ${user?['support_id']} ваш ответ',
       );
     }
 
-    Future.delayed(
-      const Duration(seconds: 1),
-      () {
-        if (!mounted) return;
+    if (!firstMessageSent) {
+      firstMessageSent = true;
 
-        setState(() {
-          messages.add({
-            "isSupport": true,
-            "text": "Ваше сообщение получено. Оператор ответит в ближайшее время.",
+      Future.delayed(
+        const Duration(seconds: 1),
+        () {
+          if (!mounted) return;
+
+
+          setState(() {
+            messages.add({
+              "isSupport": true,
+              "text": "Ваше сообщение получено. Оператор ответит в ближайшее время.",
+              "time": DateFormat('HH:mm').format(DateTime.now()),
+            });
           });
-        });
-      },
-    );
+        },
+      );
+    }
   }
 
   @override
@@ -151,13 +203,12 @@ class _SupportScreenState extends State<SupportScreen> {
         body: SafeArea(
           child: Stack(
             children: [
-              // Фиолетовый градиент сверху
               Container(
                 height: 200,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                    end: Alignment.bottomCenter, 
                     colors: [
                       Color(0xFFAE00FF),
                       Color(0xFFD8A8E8),
@@ -171,22 +222,55 @@ class _SupportScreenState extends State<SupportScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Заголовок
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(24, 20, 24, 0),
-                    child: Text(
-                      "Поддержка",
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Поддержка",
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: clearChat,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  "Очистить",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Список сообщений (расширяемая область)
                   Expanded(
                     child: ListView.builder(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
@@ -236,12 +320,28 @@ class _SupportScreenState extends State<SupportScreen> {
                                           color: const Color(0xFF2D2B36),
                                           borderRadius: BorderRadius.circular(18),
                                         ),
-                                        child: Text(
-                                          msg["text"],
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                          ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              msg["text"],
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            if (msg["time"].toString().isNotEmpty)
+                                              Text(
+                                                msg["time"] ?? "",
+                                                style: TextStyle(
+                                                  color:
+                                                      Colors.white.withOpacity(0.6),
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                       ),
                                     ],
@@ -268,12 +368,25 @@ class _SupportScreenState extends State<SupportScreen> {
                               color: const Color(0xFFAE00FF),
                               borderRadius: BorderRadius.circular(18),
                             ),
-                            child: Text(
-                              msg["text"],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  msg["text"],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  msg["time"] ?? "",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.6),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         );
@@ -281,7 +394,6 @@ class _SupportScreenState extends State<SupportScreen> {
                     ),
                   ),
 
-                  // Чипы быстрых ответов с отступом снизу
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: SingleChildScrollView(
@@ -303,16 +415,13 @@ class _SupportScreenState extends State<SupportScreen> {
                     ),
                   ),
 
-                  // Поле ввода с анимированным отступом
                   AnimatedPadding(
                     duration: const Duration(milliseconds: 200),
                     padding: EdgeInsets.fromLTRB(
                       16,
                       0,
                       16,
-                      MediaQuery.of(context).viewInsets.bottom > 0
-                          ? 15
-                          : 105,
+                      MediaQuery.of(context).viewInsets.bottom > 0 ? 15 : 105,
                     ),
                     child: Container(
                       height: 50,
@@ -326,15 +435,11 @@ class _SupportScreenState extends State<SupportScreen> {
                           Expanded(
                             child: TextField(
                               controller: messageController,
-                              style: const TextStyle(
-                                color: Colors.black,
-                              ),
+                              style: const TextStyle(color: Colors.black),
                               decoration: const InputDecoration(
                                 filled: false,
                                 hintText: "Сообщение",
-                                hintStyle: TextStyle(
-                                  color: Color(0xFF9E9E9E),
-                                ),
+                                hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
                                 focusedBorder: InputBorder.none,
@@ -377,20 +482,14 @@ class _SupportScreenState extends State<SupportScreen> {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(right: 16),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 9,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
           color: const Color(0xFF2D2B36),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 14),
         ),
       ),
     );

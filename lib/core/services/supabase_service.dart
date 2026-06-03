@@ -59,4 +59,16 @@ class SupabaseService {
 
     return List<Map<String, dynamic>>.from(response);
   }
+
+  static Future<List<Map<String, dynamic>>> getSupportMessages(
+    String phone,
+  ) async {
+    final response = await client
+        .from('support_messages')
+        .select()
+        .eq('phone', phone)
+        .order('created_at');
+
+    return List<Map<String, dynamic>>.from(response);
+  }
 }
