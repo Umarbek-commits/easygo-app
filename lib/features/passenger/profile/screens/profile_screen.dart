@@ -6,7 +6,7 @@ import '../../../../core/services/supabase_service.dart';
 import '../../../../core/storage/user_storage.dart';
 import '../../../../shared/widgets/mobile_shell.dart';
 import '../../home/screens/home_screen.dart';
-import '../../support/screens/support_screen.dart';
+import '../../support/screens/support_list_screen.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -59,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => const SupportScreen(),
+              builder: (_) => const SupportListScreen(),
             ),
           );
         }
@@ -137,7 +137,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 6),
-                                    // Белая плашка для номера телефона
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 12,
@@ -161,9 +160,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ],
                           ),
-                          // Увеличен отступ между профилем и карточкой токенов
                           const SizedBox(height: 40),
-                          // Блок с токенами (обновленный с дополнительными элементами)
+                          // Блок с токенами
                           Container(
                             height: 160,
                             width: double.infinity,
@@ -180,7 +178,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             child: Stack(
                               children: [
-                                // Декоративные SVG элементы
                                 Positioned(
                                   top: -80,
                                   left: 60,
@@ -229,17 +226,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                 ),
-                                // Иконка информации (Cupertino icon)
-                                Positioned(
+                                const Positioned(
                                   top: 18,
                                   left: 18,
-                                  child: const Icon(
+                                  child: Icon(
                                     CupertinoIcons.info_circle_fill,
                                     color: Colors.white,
                                     size: 26,
                                   ),
                                 ),
-                                // Кнопка "Пополнить" (справа сверху)
                                 Positioned(
                                   top: 14,
                                   right: 14,
@@ -273,7 +268,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                 ),
-                                // Текст "Мои токены" (слева снизу)
                                 const Positioned(
                                   left: 18,
                                   bottom: 18,
@@ -286,7 +280,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                 ),
-                                // Количество токенов (справа снизу)
                                 const Positioned(
                                   right: 18,
                                   bottom: 8,
@@ -327,11 +320,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _menuItem(
-    IconData icon,
-    String title,
-    VoidCallback onTap,
-  ) {
+  Widget _menuItem(IconData icon, String title, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -346,10 +335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-            ),
+            Icon(icon, color: Colors.white),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -361,10 +347,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: Colors.white,
-            ),
+            const Icon(Icons.chevron_right, color: Colors.white),
           ],
         ),
       ),

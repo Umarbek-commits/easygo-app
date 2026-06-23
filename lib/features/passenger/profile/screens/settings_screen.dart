@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easygo_app/features/onboarding/screens/splash_screen.dart';
 import 'package:easygo_app/core/storage/user_storage.dart';
 
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 

@@ -1,12 +1,11 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../shared/widgets/mobile_shell.dart';
 import '../../profile/screens/profile_screen.dart';
-import '../../support/screens/support_screen.dart';
+import '../../support/screens/support_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -20,11 +19,10 @@ class HomeScreen extends StatelessWidget {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => const SupportScreen(),
+              builder: (_) => const SupportListScreen(),
             ),
           );
         }
-
         if (index == 2) {
           Navigator.pushReplacement(
             context,
@@ -44,8 +42,7 @@ class HomeScreen extends StatelessWidget {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.easygo.app',
               ),
             ],
