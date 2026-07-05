@@ -1,6 +1,6 @@
 {
-    "name": "easygo_app",
-    "short_name": "easygo_app",
+    "name": "EasyGO",
+    "short_name": "EasyGO",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

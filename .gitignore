@@ -1,3 +1,6 @@
+# Secrets (не коммитить ключи)
+lib/config/secrets.dart
+
 # Miscellaneous
 *.class
 *.log

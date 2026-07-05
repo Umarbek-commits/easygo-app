@@ -12,13 +12,17 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  google_fonts: ^6.2.1
+  google_fonts: ^8.1.0
   flutter_map: ^8.1.1
-  latlong2: ^0.9.1
+  latlong2: ^0.10.1
   shared_preferences: ^2.5.3
   flutter_svg: ^2.0.10+1
   supabase_flutter: ^2.9.1
   http: ^1.2.1
+  flutter_native_splash: ^2.4.4
+  geolocator: ^13.0.2
+  cached_network_image: ^3.4.1
+  flutter_cache_manager: ^3.4.1
 
 dev_dependencies:
   flutter_test:
@@ -31,6 +35,16 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/logo.png"
+
+# Нативный сплэш — чистый одинаковый фон на всех устройствах (без обрезанной
+# иконки). Само лого EasyGO красиво анимируется уже на Flutter-экране.
+flutter_native_splash:
+  color: "#F0F0F0"
+  color_dark: "#F0F0F0"
+  android_12:
+    color: "#F0F0F0"
+    color_dark: "#F0F0F0"
+  fullscreen: true
 
 flutter:
   uses-material-design: true

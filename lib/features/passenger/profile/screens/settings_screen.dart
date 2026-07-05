@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:easygo_app/features/onboarding/screens/splash_screen.dart';
 import 'package:easygo_app/core/storage/user_storage.dart';
+import 'package:easygo_app/core/theme/app_theme.dart';
+import 'package:easygo_app/core/theme/theme_controller.dart';
 
 
 class SettingsScreen extends StatefulWidget {
@@ -11,31 +13,31 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool darkTheme = false;
+  bool darkTheme = ThemeController.instance.isDark;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F3F3),
-      body: SafeArea(
-        child: Stack(
-          children: [
+      backgroundColor: AppColors.scaffold(context),
+      body: Stack(
+        children: [
             Container(
               height: 190,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xFFAE00FF),
-                    Color(0xFFD9A6EA),
-                    Color(0xFFF3F3F3),
+                    const Color(0xFFAE00FF),
+                    const Color(0xFFD9A6EA),
+                    AppColors.scaffold(context),
                   ],
                 ),
               ),
             ),
 
-            SingleChildScrollView(
+            SafeArea(
+              child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(22, 20, 22, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,12 +65,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 55),
 
-                  const Text(
+                  Text(
                     "Основное",
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2D2B36),
+                      color: AppColors.sectionTitle(context),
                     ),
                   ),
 
@@ -81,8 +83,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: "Номер телефона",
                         onTap: () {},
                       ),
-                      const Divider(
-                        color: Color(0xFF494654),
+                      Divider(
+                        color: AppColors.divider(context),
                         height: 1,
                       ),
                       _tile(
@@ -95,12 +97,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 28),
 
-                  const Text(
+                  Text(
                     "Тема",
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2D2B36),
+                      color: AppColors.sectionTitle(context),
                     ),
                   ),
 
@@ -112,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       horizontal: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2D2B36),
+                      color: AppColors.card(context),
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Row(
@@ -121,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           width: 42,
                           height: 42,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1F1D27),
+                            color: AppColors.cardIcon(context),
                             borderRadius:
                                 BorderRadius.circular(12),
                           ),
@@ -147,6 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             setState(() {
                               darkTheme = value;
                             });
+                            ThemeController.instance.setDark(value);
                           },
                         ),
                       ],
@@ -155,12 +158,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 28),
 
-                  const Text(
+                  Text(
                     "Аккаунт",
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2D2B36),
+                      color: AppColors.sectionTitle(context),
                     ),
                   ),
 
@@ -190,9 +193,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
+            ),
           ],
         ),
-      ),
     );
   }
 
@@ -201,7 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF2D2B36),
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(children: children),
@@ -225,7 +228,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: const Color(0xFF1F1D27),
+                color: AppColors.cardIcon(context),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(

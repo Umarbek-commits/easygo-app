@@ -1,9 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/services/supabase_service.dart';
 import '../../../../core/storage/user_storage.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/services/telegram_service.dart';
 
 class SupportChatScreen extends StatefulWidget {
@@ -65,6 +68,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     firstMessageSent = true;
   }
 
+  // Время в часовом поясе Кыргызстана (UTC+6), независимо от настроек телефона
+  String _kgTime(DateTime dt) {
+    final kg = dt.toUtc().add(const Duration(hours: 6));
+    return DateFormat('HH:mm').format(kg);
+  }
+
   Future<void> loadMessages() async {
     final phone = await UserStorage.getPhone();
     if (phone == null) return;
@@ -87,7 +96,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       allMessages.add({
         "isSupport": false,
         "text": msg["message"],
-        "time": DateFormat('HH:mm').format(createdAt),
+        "time": _kgTime(createdAt),
         "created_at": msg["created_at"],
       });
     }
@@ -97,7 +106,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       allMessages.add({
         "isSupport": true,
         "text": reply["message"],
-        "time": DateFormat('HH:mm').format(createdAt),
+        "time": _kgTime(createdAt),
         "created_at": reply["created_at"],
       });
     }
@@ -126,20 +135,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       });
     }
 
+    // Список рисуется в обратном порядке (reverse: true) — новые снизу.
+    // Поэтому храним новые сообщения первыми. Благодаря reverse при загрузке
+    // новых сообщений экран НЕ сбрасывается вниз, когда листаешь историю вверх.
     setState(() {
-      messages = allMessages;
+      messages = allMessages.reversed.toList();
       isActive = sessionStatus == 'active';
-    });
-
-    // Скроллим вниз после загрузки
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
     });
   }
 
@@ -156,19 +157,20 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     final tempMessage = {
       "isSupport": false,
       "text": text,
-      "time": DateFormat('HH:mm').format(DateTime.now()),
+      "time": _kgTime(DateTime.now()),
       "created_at": DateTime.now().toIso8601String(),
     };
     
     setState(() {
-      messages.add(tempMessage);
+      // Новые — в начало (reverse: true рисует их снизу)
+      messages.insert(0, tempMessage);
     });
 
-    // Скроллим вниз
+    // При отправке всегда показываем низ (в reverse это offset 0)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -219,27 +221,27 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: const Color(0xFFF3F3F3),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Градиент сверху
+      backgroundColor: AppColors.scaffold(context),
+      body: Stack(
+        children: [
+            // Градиент сверху — до самого верха, под статус-бар
             Container(
               height: 200,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xFFAE00FF),
-                    Color(0xFFD8A8E8),
-                    Color(0xFFF3F3F3),
+                    const Color(0xFFAE00FF),
+                    const Color(0xFFD8A8E8),
+                    AppColors.scaffold(context),
                   ],
-                  stops: [0.0, 0.7, 1.0],
+                  stops: const [0.0, 0.7, 1.0],
                 ),
               ),
             ),
-            Column(
+            SafeArea(
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // AppBar
@@ -294,9 +296,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 const SizedBox(height: 16),
                 // Список сообщений
                 Expanded(
-                  child: ListView.builder(
+                  child: Stack(
+                    children: [
+                      ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+                    reverse: true,
+                    padding: EdgeInsets.fromLTRB(12, 8, 12, isActive ? 128 : 90),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final msg = messages[index];
@@ -312,7 +317,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.grey[300],
+                                color: AppColors.isDark(context)
+                                    ? Colors.white.withOpacity(0.07)
+                                    : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -320,7 +327,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey[600],
+                                  color: AppColors.textSecondary(context),
                                 ),
                               ),
                             ),
@@ -339,7 +346,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                 width: 46,
                                 height: 46,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2D2B36),
+                                  color: AppColors.card(context),
                                   borderRadius: BorderRadius.circular(23),
                                 ),
                                 child: const Icon(
@@ -353,12 +360,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
+                                    Text(
                                       "EasyGO! Поддержка",
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
+                                        color: AppColors.onSurface(context),
                                       ),
                                     ),
                                     const SizedBox(height: 6),
@@ -368,7 +375,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                         vertical: 12,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF2D2B36),
+                                        color: AppColors.card(context),
                                         borderRadius: BorderRadius.circular(18),
                                       ),
                                       child: Column(
@@ -443,115 +450,156 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                       );
                     },
                   ),
-                ),
-                // Быстрые чипы (только для активного диалога)
-                if (isActive)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-                      child: Row(
-                        children: [
-                          _chip("Проблема с водителем", () {
-                            messageController.text = "Проблема с водителем";
-                          }),
-                          _chip("Как работает рейтинг?", () {
-                            messageController.text = "Как работает рейтинг?";
-                          }),
-                          _chip("Как вернуть вещь?", () {
-                            messageController.text = "Как вернуть вещь?";
-                          }),
-                        ],
-                      ),
-                    ),
-                  ),
-                // Поле ввода (только для активного) или заглушка (для закрытого)
-                AnimatedPadding(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    0,
-                    16,
-                    MediaQuery.of(context).viewInsets.bottom > 0 ? 15 : 105,
-                  ),
-                  child: isActive
-                      ? Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE5E5E5),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Row(
-                            children: [
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: TextField(
-                                  controller: messageController,
-                                  style: const TextStyle(color: Colors.black),
-                                  decoration: const InputDecoration(
-                                    filled: false,
-                                    hintText: "Сообщение",
-                                    hintStyle: TextStyle(color: Color(0xFF9E9E9E)),
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                  ),
-                                  onSubmitted: (_) => _sendMessage(),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: _sendMessage,
-                                child: Container(
-                                  width: 44,
-                                  height: 44,
-                                  margin: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: _isSending
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.black87,
+
+                      // Поле ввода как в Telegram: блюр-панель поверх списка,
+                      // сообщения проглядывают под ней
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: ClipRect(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                            child: Container(
+                              color:
+                                  AppColors.scaffold(context).withOpacity(0.55),
+                              padding: const EdgeInsets.only(top: 6, bottom: 8),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Быстрые чипы (только для активного)
+                                  if (isActive)
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      padding: const EdgeInsets.fromLTRB(
+                                          16, 2, 16, 8),
+                                      child: Row(
+                                        children: [
+                                          _chip("Проблема с водителем", () {
+                                            messageController.text =
+                                                "Проблема с водителем";
+                                          }),
+                                          _chip("Как работает рейтинг?", () {
+                                            messageController.text =
+                                                "Как работает рейтинг?";
+                                          }),
+                                          _chip("Как вернуть вещь?", () {
+                                            messageController.text =
+                                                "Как вернуть вещь?";
+                                          }),
+                                        ],
+                                      ),
+                                    ),
+
+                                  // Поле ввода / заглушка
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    child: isActive
+                                        ? Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: AppColors.inputBg(context),
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const SizedBox(width: 20),
+                                                Expanded(
+                                                  child: TextField(
+                                                    controller:
+                                                        messageController,
+                                                    style: TextStyle(
+                                                        color: AppColors
+                                                            .onSurface(context)),
+                                                    decoration:
+                                                        const InputDecoration(
+                                                      filled: false,
+                                                      hintText: "Сообщение",
+                                                      hintStyle: TextStyle(
+                                                          color: Color(
+                                                              0xFF9E9E9E)),
+                                                      border: InputBorder.none,
+                                                      enabledBorder:
+                                                          InputBorder.none,
+                                                      focusedBorder:
+                                                          InputBorder.none,
+                                                    ),
+                                                    onSubmitted: (_) =>
+                                                        _sendMessage(),
+                                                  ),
+                                                ),
+                                                GestureDetector(
+                                                  onTap: _sendMessage,
+                                                  child: Container(
+                                                    width: 44,
+                                                    height: 44,
+                                                    margin:
+                                                        const EdgeInsets.all(4),
+                                                    decoration:
+                                                        const BoxDecoration(
+                                                      color: Colors.white,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: _isSending
+                                                        ? const SizedBox(
+                                                            width: 20,
+                                                            height: 20,
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                              color: Colors
+                                                                  .black87,
+                                                            ),
+                                                          )
+                                                        : const Icon(
+                                                            Icons.send_rounded,
+                                                            size: 20,
+                                                            color:
+                                                                Colors.black87,
+                                                          ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: AppColors.isDark(context)
+                                                  ? Colors.white
+                                                      .withOpacity(0.06)
+                                                  : Colors.grey[200],
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                "Диалог завершён",
+                                                style: TextStyle(
+                                                  color: AppColors
+                                                      .textSecondary(context),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
                                           ),
-                                        )
-                                      : const Icon(
-                                          Icons.send_rounded,
-                                          size: 20,
-                                          color: Colors.black87,
-                                        ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      // Закрытый диалог — нельзя писать
-                      : Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Center(
-                            child: Text(
-                              "Диалог завершён",
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontWeight: FontWeight.w500,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
+            ),
           ],
         ),
-      ),
     );
   }
 
@@ -562,7 +610,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         margin: const EdgeInsets.only(right: 16),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: const Color(0xFF2D2B36),
+          color: AppColors.card(context),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(

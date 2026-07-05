@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../shared/widgets/mobile_shell.dart';
-import '../../home/screens/home_screen.dart';
-import '../../profile/screens/profile_screen.dart';
 import '../../../../core/services/supabase_service.dart';
 import '../../../../core/storage/user_storage.dart';
+import '../../../../core/theme/app_theme.dart';
 import 'support_chat_screen.dart';
 
 class SupportListScreen extends StatefulWidget {
@@ -72,45 +70,29 @@ class _SupportListScreenState extends State<SupportListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MobileShell(
-      currentIndex: 0,
-      onTap: (index) {
-        if (index == 1) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
-        }
-        if (index == 2) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const ProfileScreen()),
-          );
-        }
-      },
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF3F3F3),
-        body: SafeArea(
-          child: Stack(
-            children: [
-              // Градиент сверху
+    return Scaffold(
+        backgroundColor: AppColors.scaffold(context),
+        body: Stack(
+          children: [
+              // Градиент сверху — до самого верха, под статус-бар
               Container(
                 height: 200,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Color(0xFFAE00FF),
-                      Color(0xFFD8A8E8),
-                      Color(0xFFF3F3F3),
+                      const Color(0xFFAE00FF),
+                      const Color(0xFFD8A8E8),
+                      AppColors.scaffold(context),
                     ],
-                    stops: [0.0, 0.7, 1.0],
+                    stops: const [0.0, 0.7, 1.0],
                   ),
                 ),
               ),
 
-              Column(
+              SafeArea(
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Заголовок
@@ -171,7 +153,7 @@ class _SupportListScreenState extends State<SupportListScreen> {
                         : sessions.isEmpty
                             ? _buildEmpty()
                             : ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 130),
                                 itemCount: sessions.length,
                                 itemBuilder: (context, index) {
                                   final session = sessions[index];
@@ -197,7 +179,7 @@ class _SupportListScreenState extends State<SupportListScreen> {
                                       margin: const EdgeInsets.only(bottom: 12),
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: AppColors.surface(context),
                                         borderRadius: BorderRadius.circular(18),
                                         boxShadow: [
                                           BoxShadow(
@@ -236,10 +218,10 @@ class _SupportListScreenState extends State<SupportListScreen> {
                                               children: [
                                                 Text(
                                                   "Диалог #$sessionNumber",
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w700,
-                                                    color: Colors.black87,
+                                                    color: AppColors.onSurface(context),
                                                   ),
                                                 ),
                                                 const SizedBox(height: 4),
@@ -247,7 +229,7 @@ class _SupportListScreenState extends State<SupportListScreen> {
                                                   DateFormat('dd.MM.yyyy, HH:mm').format(createdAt),
                                                   style: TextStyle(
                                                     fontSize: 13,
-                                                    color: Colors.grey[500],
+                                                    color: AppColors.textSecondary(context),
                                                   ),
                                                 ),
                                               ],
@@ -263,7 +245,9 @@ class _SupportListScreenState extends State<SupportListScreen> {
                                             decoration: BoxDecoration(
                                               color: isActive
                                                   ? const Color(0xFFAE00FF).withOpacity(0.1)
-                                                  : Colors.grey[100],
+                                                  : (AppColors.isDark(context)
+                                                      ? Colors.white.withOpacity(0.06)
+                                                      : Colors.grey[100]),
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Text(
@@ -273,7 +257,7 @@ class _SupportListScreenState extends State<SupportListScreen> {
                                                 fontWeight: FontWeight.w600,
                                                 color: isActive
                                                     ? const Color(0xFFAE00FF)
-                                                    : Colors.grey[500],
+                                                    : AppColors.textSecondary(context),
                                               ),
                                             ),
                                           ),
@@ -281,7 +265,7 @@ class _SupportListScreenState extends State<SupportListScreen> {
                                           const SizedBox(width: 8),
                                           Icon(
                                             Icons.chevron_right,
-                                            color: Colors.grey[400],
+                                            color: AppColors.textSecondary(context),
                                           ),
                                         ],
                                       ),
@@ -292,11 +276,10 @@ class _SupportListScreenState extends State<SupportListScreen> {
                   ),
                 ],
               ),
+              ),
             ],
           ),
-        ),
-      ),
-    );
+      );
   }
 
   Widget _buildEmpty() {
@@ -318,12 +301,12 @@ class _SupportListScreenState extends State<SupportListScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             "Нет обращений",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.black87,
+              color: AppColors.onSurface(context),
             ),
           ),
           const SizedBox(height: 8),
@@ -331,7 +314,7 @@ class _SupportListScreenState extends State<SupportListScreen> {
             "Нажмите «Новый», чтобы начать диалог",
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: AppColors.textSecondary(context),
             ),
           ),
           const SizedBox(height: 32),

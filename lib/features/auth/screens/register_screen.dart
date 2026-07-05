@@ -25,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   String _verificationCode = '';
   String? _phoneError;
   String? _codeError;
+  String? _nameError;
   String? _generatedCode;
 
   @override
@@ -211,9 +212,20 @@ class _RegisterScreenState extends State<RegisterScreen>
                             _buildTextField(
                               controller: _firstNameController,
                             ),
+                            if (_nameError != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  _nameError!,
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
                             const SizedBox(height: 14),
 
-                            _buildLabel('Фамилия'),
+                            _buildLabel('Фамилия (необязательно)'),
                             const SizedBox(height: 6),
                             _buildTextField(
                               controller: _lastNameController,
@@ -273,6 +285,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                             _buildTextField(
                               controller: _codeController,
                               obscureText: true,
+                              keyboardType: TextInputType.number,
                             ),
                             if (_generatedCode != null)
                               Padding(
@@ -309,7 +322,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     setState(() {
                                       _phoneError = null;
                                       _codeError = null;
+                                      _nameError = null;
                                     });
+
+                                    // Имя обязательно
+                                    if (_firstNameController.text.trim().isEmpty) {
+                                      setState(() {
+                                        _nameError = 'Введите имя';
+                                      });
+                                      return;
+                                    }
 
                                     if (_codeController.text.trim() != _verificationCode) {
                                       setState(() {

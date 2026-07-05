@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'dart:math';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/storage/user_storage.dart';
-import '../../passenger/home/screens/home_screen.dart';
+import '../../passenger/main_tab_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -318,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const HomeScreen(),
+                                      builder: (_) => const MainTabScreen(),
                                     ),
                                   );
                                 },
@@ -391,6 +391,7 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         child: TextField(
           controller: controller,
+          keyboardType: TextInputType.number,
           style: const TextStyle(
             color: Colors.black87,
             fontSize: 15,
