@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class TelegramService {
-  static const String botToken =
-      '8041502924:AAFcvwBXHTlApR__Y3EdhfsMjN8g-_L5Xmk';
+import '../../config/secrets.dart';
 
-  static const String chatId =
-      '6170555228';
+class TelegramService {
+  static const String botToken = AppSecrets.telegramBotToken;
+
+  static const String chatId = AppSecrets.telegramChatId;
 
   static Future<void> sendMessage(String text) async {
     final url = Uri.parse(

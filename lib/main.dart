@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 
 import 'app.dart';
+import 'config/secrets.dart';
 import 'core/theme/theme_controller.dart';
 import 'core/role/role_controller.dart';
 
@@ -15,8 +16,8 @@ Future<void> main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await Supabase.initialize(
-    url: 'https://ppfyjiengpulysyvgawn.supabase.co',
-    anonKey: 'sb_publishable_-IR2Sly_KScIw6-mAA2cRg_Vpvb-4Pd',
+    url: AppSecrets.supabaseUrl,
+    anonKey: AppSecrets.supabaseAnonKey,
   );
 
   // Загружаем сохранённый выбор темы и роли
