@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Границы Кыргызстана — карту нельзя увести за их пределы
   static final LatLngBounds _kyrgyzstanBounds = LatLngBounds(
     const LatLng(39.10, 69.20), // юго-запад
-    const LatLng(43.35, 80.35), // северо-восток
+    const LatLng(43.35, 80.35), // северо-востоk
   );
 
   static const double _minZoom = 6;
