@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const LatLng(43.35, 80.35), // северо-востоk
   );
 
-  static const double _minZoom = 6;
+  static const double _minZoom = 6; 
   static const double _maxZoom = 18;
 
   final MapController _map = MapController();

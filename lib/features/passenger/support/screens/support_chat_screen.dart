@@ -191,14 +191,13 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         // Отправляем уведомление в Telegram
         await TelegramService.sendMessage(
           '📩 Новый запрос EasyGO\n\n'
-          'ID: ${user['support_id']}\n'
-          'Телефон: $phone\n'
           'Имя: ${user['first_name']} ${user['last_name']}\n'
+          'Телефон: $phone\n'
           'Сессия: ${widget.sessionId}\n\n'
           'Сообщение:\n'
           '$text\n\n'
-          'Ответить: /reply ${user['support_id']} ваш ответ\n'
-          'Закрыть диалог: /close ${user['support_id']}',
+          '↩️ Ответьте (reply) на это сообщение, чтобы написать клиенту.\n'
+          'Закрыть диалог: /close ${widget.sessionId}',
         );
 
         // Автоответ только на первое сообщение в диалоге
